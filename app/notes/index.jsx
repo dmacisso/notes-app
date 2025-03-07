@@ -99,7 +99,7 @@ const NotesScreen = () => {
     } else {
       setNotes((prevNotes) =>
         prevNotes.map((note) =>
-          note.id === id ? { ...note, text: response.data.text } : note
+          note.$id === id ? { ...note, text: response.data.text } : note
         )
       );
     }
