@@ -1,4 +1,4 @@
-import { Client, Databases } from 'react-native-appwrite';
+import { Client, Databases, Account } from 'react-native-appwrite';
 import { Platform } from 'react-native';
 
 //* uses the environment variables defined in .env
@@ -30,4 +30,7 @@ switch (Platform.OS) {
 //* initialize the database
 const database = new Databases(client);
 
-export { database, config, client };
+//* initialize the account
+const account = new Account(client)
+
+export { database, config, client, account };

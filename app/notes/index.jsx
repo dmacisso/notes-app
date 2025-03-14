@@ -5,14 +5,27 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Platform,
   ActivityIndicator,
 } from 'react-native';
+
+//* needed for redirection to other pages in the stack.
+import { useRouter } from 'expo-router';
+
+//* needed to import the useAuth hook to check for login
+import { useAuth } from '@/contexts/AuthContext';
 
 import NoteList from '@/components/NoteList';
 import AddNoteModal from '@/components/AddNoteModal';
 import noteService from '@/services/noteService';
 
 const NotesScreen = () => {
+  const router = useRouter();
+
+  //* to get global state call the useAuth() hook
+  //* note: change loading to authLoading to avoid name conflict with the local loading state
+  const { user, loading: authLoading } = useAuth();
+
   // * MARK: State
   const [notes, setNotes] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -20,21 +33,35 @@ const NotesScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  //* MARK: Effect
+  //* MARK: useEffect
+
   useEffect(() => {
-    fetchNotes();
-  }, []);
+    if (!authLoading && !user) {
+      // if (!user) {
+      router.replace('/auth');
+    }
+  }, [user, authLoading]);
+
+  useEffect(() => {
+    if (user) {
+      fetchNotes();
+    }
+  }, [user]);
 
   //* MARK: Functions
 
   const fetchNotes = async () => {
     setLoading(true);
-    const response = await noteService.getNotes();
+    const response = await noteService.getNotes(user.$id);
     // console.log("Refresh notes", response)
     if (response.error) {
       setError(response.error);
       //* Alert comes from react-native
-      Alert.alert('Error', response.error);
+      if (Platform.OS == 'web') {
+        window.alert('Error');
+      } else {
+        Alert.alert('Error', response.error);
+      }
     } else {
       setNotes(response.data);
       setError(null);
@@ -53,9 +80,13 @@ const NotesScreen = () => {
     //   },
     // ]);
     //* Interact with Appwrite
-    const response = await noteService.addNote(newNote);
+    const response = await noteService.addNote(user.$id, newNote);
     if (response.error) {
-      Alert.alert('Error', response.error);
+      if (Platform.OS == 'web') {
+        window.alert('Error');
+      } else {
+        Alert.alert('Error', response.error);
+      }
     } else {
       setNotes([...notes, response.data]);
     }
@@ -112,8 +143,12 @@ const NotesScreen = () => {
         <ActivityIndicator size="large" color="#007bff" />
       ) : (
         <>
-          {error && <Text style={styles.errorText}>{error}</Text>}
-          <NoteList notes={notes} onDelete={deleteNote} onEdit={editNote} />
+          {error ? <Text style={styles.errorText}>{error} </Text> : null}
+          {notes.length === 0 ? (
+            <Text style={styles.noNotesText}>You have no notes!</Text>
+          ) : (
+            <NoteList notes={notes} onDelete={deleteNote} onEdit={editNote} />
+          )}
         </>
       )}
 
@@ -163,6 +198,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 10,
     fontSize: 16,
+  },
+  noNotesText: {
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#555',
+    marginTop: 15,
   },
 });
 

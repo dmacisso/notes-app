@@ -4,13 +4,13 @@ import { database } from './appwrite';
 
 const databaseService = {
   //MARK: List Documents using the listDocuments method
-  async listDocuments(dbId, colId) {
+  async listDocuments(dbId, colId, queries = []) {
     // listDocuments is a method being defined here.
     try {
-      const response = await database.listDocuments(dbId, colId);
+      const response = await database.listDocuments(dbId, colId, queries);
       // listDocuments being called here is part of the SDK
       // return { data: response.documents || [], error: null };
-      return response.documents || [];
+      return { data: response.documents || [], error: null };
     } catch (error) {
       console.error('Error fetching documents:', error.message);
       return { error: error.message };
